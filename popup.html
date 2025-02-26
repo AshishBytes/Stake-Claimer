@@ -2,32 +2,32 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Stake Code Claimer</title>
+  <title>Stake Code Claimer Options</title>
   <style>
     body { font-family: Arial, sans-serif; width: 320px; padding: 10px; }
-    button { width: 100%; margin: 5px 0; }
-    input, textarea, select { width: 100%; margin: 5px 0; }
+    button, input, select, textarea { width: 100%; margin: 5px 0; }
     #history { max-height: 150px; overflow-y: auto; border: 1px solid #ccc; margin-top: 10px; padding: 5px; }
   </style>
 </head>
 <body>
   <h3>Stake Code Claimer</h3>
   <div>
-    <label>Automation:</label>
+    <label><strong>Automation:</strong></label>
     <button id="enable">Enable</button>
     <button id="disable">Disable</button>
     <div id="automationStatus"></div>
   </div>
   <hr>
   <div>
-    <label>Channel IDs (comma separated):</label>
-    <input type="text" id="channelIds"/>
+    <label><strong>Channel IDs (comma separated):</strong></label>
+    <input type="text" id="channelIds" placeholder="-1002465078337, -1009876543210" />
   </div>
   <div>
-    <label>Select Stake Domain:</label>
+    <label><strong>Select Stake Domain:</strong></label>
     <select id="stakeDomain"></select>
   </div>
   <button id="saveConfig">Save Configuration</button>
+  <button id="resetConfig">Reset to Defaults</button>
   <hr>
   <h4>History Log</h4>
   <div id="history"></div>

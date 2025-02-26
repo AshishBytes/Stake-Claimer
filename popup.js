@@ -1,5 +1,5 @@
 const defaultConfig = {
-  automationEnabled: true,
+  automationEnabled: false,
   channelIds: ["-1002239669640"],
   stakeDomains: [
     "https://stake.com",
@@ -111,6 +111,13 @@ document.getElementById("saveConfig").addEventListener("click", () => {
       console.log("Configuration saved.");
       populateFields(config);
     });
+  });
+});
+
+document.getElementById("resetConfig").addEventListener("click", () => {
+  chrome.storage.local.set({ config: defaultConfig }, () => {
+    console.log("Configuration reset to defaults.");
+    populateFields(defaultConfig);
   });
 });
 

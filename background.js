@@ -19,7 +19,6 @@ function saveConfig(config, callback) {
 }
 
 let configCache = null;
-
 getConfig((config) => {
   configCache = config;
   console.log("Config loaded:", configCache);
@@ -30,7 +29,7 @@ getConfig((config) => {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.config) {
     configCache = changes.config.newValue;
-    console.log("Config updated via onChanged:", configCache);
+    console.log("Config updated:", configCache);
     initChannelStatus();
     ensureTelegramTabs();
   }
@@ -42,6 +41,9 @@ function initChannelStatus() {
   configCache.channelIds.forEach(id => {
     if (!channelStatus[id]) {
       channelStatus[id] = { initialized: false, lastProcessed: 0 };
+    } else {
+      channelStatus[id].initialized = false;
+      channelStatus[id].lastProcessed = 0;
     }
   });
 }
@@ -53,10 +55,10 @@ function ensureTelegramTabs() {
       const exists = tabs.some(tab => tab.url && tab.url.includes(channel));
       if (!exists) {
         const url = `https://web.telegram.org/a/#${channel}`;
-        console.log(`No tab for channel ${channel} found. Opening new tab: ${url}`);
+        console.log(`Opening tab for channel ${channel}: ${url}`);
         chrome.tabs.create({ url, active: false, pinned: true });
       } else {
-        console.log(`Channel ${channel} tab already open.`);
+        console.log(`Channel ${channel} already has an open tab.`);
       }
     });
   });
@@ -94,7 +96,7 @@ function scanTabForCodes(tab, channelId) {
     }
   }, (results) => {
     if (chrome.runtime.lastError) {
-      console.error(`Error executing script in tab ${tab.id}:`, chrome.runtime.lastError);
+      console.error(`Error in tab ${tab.id}:`, chrome.runtime.lastError);
       return;
     }
     if (!results || !results[0] || !results[0].result) return;
@@ -106,7 +108,7 @@ function scanTabForCodes(tab, channelId) {
     if (!channelStatus[channelId].initialized) {
       channelStatus[channelId].lastProcessed = maxFoundId;
       channelStatus[channelId].initialized = true;
-      console.log(`Channel ${channelId} initialized with lastProcessed = ${maxFoundId}`);
+      console.log(`Initialized channel ${channelId} with lastProcessed = ${maxFoundId}`);
       return;
     }
     const newItems = found.filter(item => item.messageId > channelStatus[channelId].lastProcessed);
@@ -125,7 +127,7 @@ function scanTelegramForCodes() {
   if (!configCache || !configCache.channelIds) return;
   chrome.tabs.query({ url: "*://*.telegram.org/*" }, (tabs) => {
     if (tabs.length === 0) {
-      console.log("No Telegram Web tabs found.");
+      console.log("No Telegram Web tabs found. Ensuring tabs...");
       ensureTelegramTabs();
       return;
     }
@@ -152,10 +154,10 @@ function claimCode(code) {
       console.log("History log updated.");
     });
   } else {
-    console.log("Automation disabled. Not claiming code:", code);
+    console.log("Automation disabled; not claiming code:", code);
   }
 }
 
-setInterval(scanTelegramForCodes, 3000);
+setInterval(scanTelegramForCodes, 5000);
 
-console.log("Background script initialized. Monitoring channels:", configCache ? configCache.channelIds : "none yet");
+console.log("Background script initialized. Monitoring channels:", configCache ? configCache.channelIds : "none");
