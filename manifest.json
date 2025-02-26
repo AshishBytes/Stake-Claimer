@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Stake Code Claimer",
+  "version": "1.0",
+  "description": "Automatically monitors specified Telegram channels for bonus codes and claims them on Stake.bet via URL.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://web.telegram.org/*",
+    "https://stake.bet/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "48": "icon.png"
+  }
+}
