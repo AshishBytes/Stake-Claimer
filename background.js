@@ -1,45 +1,80 @@
-import { channelConfig } from "./config.js";
+import { defaultConfig } from "./config.js";
 
-// For each channel, store initialization status and last processed message ID.
-const channelStatus = {};
-channelConfig.forEach(ch => {
-  channelStatus[ch.id] = { initialized: false, lastProcessed: 0 };
+function getConfig(callback) {
+  chrome.storage.local.get("config", (result) => {
+    if (result.config) {
+      callback(result.config);
+    } else {
+      chrome.storage.local.set({ config: defaultConfig }, () => {
+        callback(defaultConfig);
+      });
+    }
+  });
+}
+
+function saveConfig(config, callback) {
+  chrome.storage.local.set({ config }, () => {
+    if (callback) callback();
+  });
+}
+
+let configCache = null;
+
+getConfig((config) => {
+  configCache = config;
+  console.log("Config loaded:", configCache);
+  initChannelStatus();
+  ensureTelegramTabs();
 });
 
-// Automatically ensure a Telegram tab is open for each allowed channel.
-// We open each tab in inactive and pinned mode so they remain open in the background.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.config) {
+    configCache = changes.config.newValue;
+    console.log("Config updated via onChanged:", configCache);
+    initChannelStatus();
+    ensureTelegramTabs();
+  }
+});
+
+const channelStatus = {};
+function initChannelStatus() {
+  if (!configCache || !configCache.channelIds) return;
+  configCache.channelIds.forEach(id => {
+    if (!channelStatus[id]) {
+      channelStatus[id] = { initialized: false, lastProcessed: 0 };
+    }
+  });
+}
+
 function ensureTelegramTabs() {
-  channelConfig.forEach(channel => {
-    chrome.tabs.query({ url: "https://web.telegram.org/*" }, (tabs) => {
-      const exists = tabs.some(tab => tab.url && tab.url.includes(channel.id));
+  if (!configCache || !configCache.channelIds) return;
+  configCache.channelIds.forEach(channel => {
+    chrome.tabs.query({ url: "*://*.telegram.org/*" }, (tabs) => {
+      const exists = tabs.some(tab => tab.url && tab.url.includes(channel));
       if (!exists) {
-        const url = `https://web.telegram.org/a/#${channel.id}`;
-        console.log(`No tab for channel ${channel.id} found. Opening new tab: ${url}`);
+        const url = `https://web.telegram.org/a/#${channel}`;
+        console.log(`No tab for channel ${channel} found. Opening new tab: ${url}`);
         chrome.tabs.create({ url, active: false, pinned: true });
       } else {
-        console.log(`Channel ${channel.id} tab already open.`);
+        console.log(`Channel ${channel} tab already open.`);
       }
     });
   });
 }
 
-// Returns the channel ID if the URL contains one of the allowed channel IDs.
 function getChannelIdFromUrl(url) {
-  for (const ch of channelConfig) {
-    if (url.includes(ch.id)) {
-      return ch.id;
-    }
+  if (!configCache || !configCache.channelIds) return null;
+  for (const id of configCache.channelIds) {
+    if (url.includes(id)) return id;
   }
   return null;
 }
 
-// Injects a script into a Telegram tab to extract bonus codes along with their message IDs.
 function scanTabForCodes(tab, channelId) {
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: function() {
       let results = [];
-      // Adjust this selector if Telegram Web’s DOM changes.
       const messages = document.querySelectorAll(".Message");
       messages.forEach(msgElem => {
         const msgIdStr = msgElem.getAttribute("data-message-id");
@@ -50,7 +85,7 @@ function scanTabForCodes(tab, channelId) {
             const codeEl = msgElem.querySelector(".text-entity-code");
             if (codeEl) {
               const code = codeEl.textContent.trim();
-              results.push({ code: code, messageId: messageId });
+              results.push({ code, messageId });
             }
           }
         }
@@ -66,18 +101,14 @@ function scanTabForCodes(tab, channelId) {
     const found = results[0].result;
     let maxFoundId = 0;
     found.forEach(item => {
-      if (item.messageId > maxFoundId) {
-        maxFoundId = item.messageId;
-      }
+      if (item.messageId > maxFoundId) maxFoundId = item.messageId;
     });
-    // On the first scan for this channel, initialize and ignore old messages.
     if (!channelStatus[channelId].initialized) {
       channelStatus[channelId].lastProcessed = maxFoundId;
       channelStatus[channelId].initialized = true;
       console.log(`Channel ${channelId} initialized with lastProcessed = ${maxFoundId}`);
       return;
     }
-    // Process only messages with IDs greater than the last processed.
     const newItems = found.filter(item => item.messageId > channelStatus[channelId].lastProcessed);
     if (newItems.length > 0) {
       const maxNewId = Math.max(...newItems.map(item => item.messageId));
@@ -90,15 +121,14 @@ function scanTabForCodes(tab, channelId) {
   });
 }
 
-// Scans all open Telegram Web tabs for new bonus codes.
 function scanTelegramForCodes() {
-  chrome.tabs.query({ url: "https://web.telegram.org/*" }, (tabs) => {
+  if (!configCache || !configCache.channelIds) return;
+  chrome.tabs.query({ url: "*://*.telegram.org/*" }, (tabs) => {
     if (tabs.length === 0) {
-      console.log("No Telegram Web tab found.");
+      console.log("No Telegram Web tabs found.");
       ensureTelegramTabs();
       return;
     }
-    // Only consider tabs whose URL contains one of the allowed channel IDs.
     const allowedTabs = tabs.filter(tab => getChannelIdFromUrl(tab.url) !== null);
     console.log(`Scanning ${allowedTabs.length} allowed Telegram tab(s).`);
     allowedTabs.forEach(tab => {
@@ -109,23 +139,23 @@ function scanTelegramForCodes() {
   });
 }
 
-// Constructs the claim URL and opens it if automation is enabled.
 function claimCode(code) {
-  chrome.storage.local.get("automationEnabled", (data) => {
-    if (data.automationEnabled) {
-      const claimUrl = `https://stake.bet/settings/offers?app=CodeClaim&type=drop&code=${encodeURIComponent(code)}&modal=redeemBonus`;
-      console.log("Claiming code", code, "with URL:", claimUrl);
-      chrome.tabs.create({ url: claimUrl });
-    } else {
-      console.log("Automation disabled. Not claiming code:", code);
-    }
-  });
+  if (!configCache || !configCache.activeStakeDomain) return;
+  if (configCache.automationEnabled) {
+    const claimUrl = `${configCache.activeStakeDomain}/settings/offers?app=CodeClaim&type=drop&code=${encodeURIComponent(code)}&modal=redeemBonus`;
+    console.log("Claiming code", code, "with URL:", claimUrl);
+    chrome.tabs.create({ url: claimUrl });
+    const entry = { code, timestamp: new Date().toISOString(), claimUrl };
+    configCache.historyLog = configCache.historyLog || [];
+    configCache.historyLog.push(entry);
+    saveConfig(configCache, () => {
+      console.log("History log updated.");
+    });
+  } else {
+    console.log("Automation disabled. Not claiming code:", code);
+  }
 }
 
-// Ensure that Telegram tabs exist for all allowed channels.
-ensureTelegramTabs();
+setInterval(scanTelegramForCodes, 3000);
 
-// Periodically scan every 5 seconds.
-setInterval(scanTelegramForCodes, 5000);
-
-console.log("Background script initialized. Listening for new messages on channels:", channelConfig);
+console.log("Background script initialized. Monitoring channels:", configCache ? configCache.channelIds : "none yet");

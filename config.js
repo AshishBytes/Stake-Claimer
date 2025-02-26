@@ -1,4 +1,35 @@
-export const channelConfig = [
-  { id: "-1002465078337", name: "Channel1" },
-  { id: "-1002340321141", name: "Channel2" }
-];
+export const defaultConfig = {
+  automationEnabled: false,
+  channelIds: ["-1002239669640"],
+  stakeDomains: [
+    "https://stake.com",
+    "https://stake1001.com",
+    "https://stake1002.com",
+    "https://stake1003.com",
+    "https://stake1004.com",
+    "https://stake1020.com",
+    "https://stake1021.com",
+    "https://stake1022.com",
+    "https://stake1023.com",
+    "https://stake.pet",
+    "https://stakeru8.com",
+    "https://stake.jp",
+    "https://stake.bz",
+    "https://stake.coach",
+    "https://stake.pink",
+    "https://stake.ac",
+    "https://stake.games",
+    "https://stake.bet",
+    "https://stake.mba",
+    "https://stake.ceo",
+    "https://stake.krd",
+    "https://stake.blue",
+    "https://stake.mg",
+    "https://stake.tel",
+    "https://stake.horse",
+    "https://stake.us",
+    "https://staketr.com"
+  ],
+  activeStakeDomain: "https://stake.ceo",
+  historyLog: []
+};

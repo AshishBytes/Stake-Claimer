@@ -4,15 +4,33 @@
   <meta charset="UTF-8">
   <title>Stake Code Claimer</title>
   <style>
-    body { font-family: Arial, sans-serif; width: 250px; padding: 10px; }
+    body { font-family: Arial, sans-serif; width: 320px; padding: 10px; }
     button { width: 100%; margin: 5px 0; }
+    input, textarea, select { width: 100%; margin: 5px 0; }
+    #history { max-height: 150px; overflow-y: auto; border: 1px solid #ccc; margin-top: 10px; padding: 5px; }
   </style>
 </head>
 <body>
   <h3>Stake Code Claimer</h3>
-  <button id="enable">Enable Automation</button>
-  <button id="disable">Disable Automation</button>
-  <div id="status"></div>
+  <div>
+    <label>Automation:</label>
+    <button id="enable">Enable</button>
+    <button id="disable">Disable</button>
+    <div id="automationStatus"></div>
+  </div>
+  <hr>
+  <div>
+    <label>Channel IDs (comma separated):</label>
+    <input type="text" id="channelIds"/>
+  </div>
+  <div>
+    <label>Select Stake Domain:</label>
+    <select id="stakeDomain"></select>
+  </div>
+  <button id="saveConfig">Save Configuration</button>
+  <hr>
+  <h4>History Log</h4>
+  <div id="history"></div>
   <script src="popup.js"></script>
 </body>
 </html>
