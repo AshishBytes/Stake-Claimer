@@ -141,12 +141,66 @@ function scanTelegramForCodes() {
   });
 }
 
+function autoClickBonusButtons(tabId) {
+  chrome.scripting.executeScript({
+    target: { tabId },
+    func: function() {
+      console.log("Auto-click bonus script injected (text search)!");
+      const start = Date.now();
+      const interval = setInterval(() => {
+        const buttons = document.querySelectorAll("button");
+        let claimButton = null;
+        let dismissButton = null;
+        buttons.forEach(btn => {
+          const text = btn.textContent.trim().toLowerCase();
+          if (text === "claim bonus") {
+            claimButton = btn;
+          } else if (text === "dismiss") {
+            dismissButton = btn;
+          }
+        });
+        
+        if (claimButton) {
+          console.log("Found 'Claim bonus' button. Clicking it now!");
+          claimButton.click();
+          clearInterval(interval);
+          return;
+        }
+        
+        if (Date.now() - start > 10000) {
+          if (dismissButton) {
+            console.log("After waiting, found 'Dismiss' button. Clicking it (code invalid).");
+            dismissButton.click();
+            clearInterval(interval);
+            return;
+          }
+        }
+        
+        if (Date.now() - start > 15000) {
+          console.log("Timed out waiting for 'Claim bonus' or 'Dismiss' button.");
+          clearInterval(interval);
+        }
+      }, 500);
+    }
+  });
+}
+
+
 function claimCode(code) {
   if (!configCache || !configCache.activeStakeDomain) return;
   if (configCache.automationEnabled) {
     const claimUrl = `${configCache.activeStakeDomain}/settings/offers?app=CodeClaim&type=drop&code=${encodeURIComponent(code)}&modal=redeemBonus`;
     console.log("Claiming code", code, "with URL:", claimUrl);
-    chrome.tabs.create({ url: claimUrl });
+
+    chrome.tabs.create({ url: claimUrl }, (newTab) => {
+      chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+        if (tabId === newTab.id && info.status === "complete") {
+          chrome.tabs.onUpdated.removeListener(listener);
+          autoClickBonusButtons(newTab.id);
+        }
+      });
+    });
+
     const entry = { code, timestamp: new Date().toISOString(), claimUrl };
     configCache.historyLog = configCache.historyLog || [];
     configCache.historyLog.push(entry);
