@@ -238,7 +238,11 @@ function autoClickBonusButtons(tabId) {
           return (
             !btn.hasAttribute("data-modal-close") &&
             !btn.disabled &&
-            btn.innerText.trim().toLowerCase() !== "dismiss"
+            btn.innerText.trim().toLowerCase() !== "dismiss" &&
+            !btn
+              .closest("div")
+              .innerText.toLowerCase()
+              .includes("select your preferred currency")
           );
         });
         if (fallbackButton) {
