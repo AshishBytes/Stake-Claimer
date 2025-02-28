@@ -321,7 +321,7 @@ function claimCode(code) {
   }
 }
 
-setInterval(scanTelegramForCodes, 5000);
+setInterval(scanTelegramForCodes, 3000);
 
 console.log(
   "Background script initialized. Monitoring channels:",
