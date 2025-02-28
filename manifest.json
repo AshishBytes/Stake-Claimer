@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stake Code Claimer",
-  "version": "2.0",
+  "version": "2.1",
   "description": "Automatically monitors specified Telegram channels for bonus codes, claims them on a chosen stake domain, and logs the history.",
   "permissions": [
     "activeTab",
