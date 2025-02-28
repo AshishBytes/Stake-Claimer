@@ -217,16 +217,16 @@ function autoClickBonusButtons(tabId) {
         //   dismissButton.click();
         //   return true;
         // }
-        if (Date.now() - start > 10000) {
-          if (dismissButton) {
-            console.log(
-              "After waiting, found 'Dismiss' button. Clicking it (code invalid)."
-            );
-            dismissButton.click();
-            clearInterval(interval);
-            return;
-          }
-        }
+        // if (Date.now() - start > 10000) {
+        //   if (dismissButton) {
+        //     console.log(
+        //       "After waiting, found 'Dismiss' button. Clicking it (code invalid)."
+        //     );
+        //     dismissButton.click();
+        //     clearInterval(interval);
+        //     return;
+        //   }
+        // }
         console.log("Method 2: Text search did not find any valid button.");
         return false;
       }
@@ -235,10 +235,17 @@ function autoClickBonusButtons(tabId) {
         methodsTried.push("fallback");
         const buttons = document.querySelectorAll("button");
         const fallbackButton = [].find.call(buttons, function (btn) {
-          return !btn.hasAttribute("data-modal-close") && !btn.disabled && fallbackButton.innerText.trim() !== "Dismiss";
+          return (
+            !btn.hasAttribute("data-modal-close") &&
+            !btn.disabled &&
+            btn.innerText.trim().toLowerCase() !== "dismiss"
+          );
         });
         if (fallbackButton) {
-          console.log("Method 3: Found a button with text:", fallbackButton.innerText.trim());
+          console.log(
+            "Method 3: Found a button with text:",
+            fallbackButton.innerText.trim()
+          );
           console.log("Method 3: Fallback found a button. Clicking it.");
 
           fallbackButton.click();
@@ -292,9 +299,9 @@ function claimCode(code) {
       chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
         if (tabId === newTab.id && info.status === "complete") {
           chrome.tabs.onUpdated.removeListener(listener);
-          setInterval(() => {
-            autoClickBonusButtons(newTab.id);
-          }, 4000);
+          // setInterval(() => {
+          autoClickBonusButtons(newTab.id);
+          // }, 3500);
         }
       });
     });
