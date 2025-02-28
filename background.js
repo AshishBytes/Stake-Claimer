@@ -259,31 +259,36 @@ function autoClickBonusButtons(tabId) {
         return false;
       }
 
+      let attempt = 1;
+      const maxAttempts = 3;
+
       function runAllMethods() {
-        console.log("Running auto-click methods...");
-        if (trySpecificSelector()) {
-          console.log("Method 1 succeeded. Clearing interval.");
-          clearInterval(interval);
-          return;
+        console.log("Running auto-click methods on attempt", attempt);
+        let success = false;
+        if (attempt === 1) {
+          success = trySpecificSelector();
+        } else if (attempt === 2) {
+          success = trySpecificSelector() || tryTextSearch();
+        } else if (attempt >= 3) {
+          success = trySpecificSelector() || tryTextSearch() || tryFallback();
         }
-        if (tryTextSearch()) {
-          console.log("Method 2 succeeded. Clearing interval.");
+        if (success) {
+          console.log(
+            "A method succeeded on attempt",
+            attempt,
+            ". Clearing interval."
+          );
           clearInterval(interval);
-          return;
-        }
-        if (tryFallback()) {
-          console.log("Method 3 succeeded. Clearing interval.");
+        } else if (attempt >= maxAttempts) {
+          console.log(
+            "Max attempts reached; clearing interval without success."
+          );
           clearInterval(interval);
-          return;
         }
-        console.log(
-          "No valid button was found using any method. Methods tried:",
-          methodsTried.join(", ")
-        );
+        attempt++;
       }
 
       const interval = setInterval(runAllMethods, 1000);
-
       setTimeout(runAllMethods, 2000);
     },
   });
