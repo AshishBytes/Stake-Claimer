@@ -1,6 +1,6 @@
 export const defaultConfig = {
   automationEnabled: false,
-  channelIds: ["-1002239669640"],
+  channelIds: ["-1002239669640", "-1002227984905"],
   stakeDomains: [
     "https://stake.com",
     "https://stake1001.com",

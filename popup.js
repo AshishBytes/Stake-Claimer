@@ -1,6 +1,6 @@
 const defaultConfig = {
   automationEnabled: false,
-  channelIds: ["-1002239669640"],
+  channelIds: ["-1002239669640", "-1002227984905"],
   stakeDomains: [
     "https://stake.com",
     "https://stake1001.com",
@@ -28,10 +28,10 @@ const defaultConfig = {
     "https://stake.tel",
     "https://stake.horse",
     "https://stake.us",
-    "https://staketr.com"
+    "https://staketr.com",
   ],
   activeStakeDomain: "https://stake.ceo",
-  historyLog: []
+  historyLog: [],
 };
 
 function loadConfig(callback) {
@@ -53,34 +53,40 @@ function saveConfig(config, callback) {
 }
 
 function populateFields(config) {
-  document.getElementById("automationStatus").innerText = config.automationEnabled ? "Enabled" : "Disabled";
+  document.getElementById("automationStatus").innerText =
+    config.automationEnabled ? "Enabled" : "Disabled";
   document.getElementById("channelIds").value = config.channelIds.join(", ");
-  
+
   const stakeDomainSelect = document.getElementById("stakeDomain");
   stakeDomainSelect.innerHTML = "";
-  config.stakeDomains.forEach(domain => {
+  config.stakeDomains.forEach((domain) => {
     const option = document.createElement("option");
     option.value = domain;
     option.text = domain;
     if (domain === config.activeStakeDomain) option.selected = true;
     stakeDomainSelect.appendChild(option);
   });
-  
+
   const historyDiv = document.getElementById("history");
   historyDiv.innerHTML = "";
   if (config.historyLog && config.historyLog.length > 0) {
-    config.historyLog.slice().reverse().forEach(entry => {
-      const p = document.createElement("p");
-      p.innerText = `[${new Date(entry.timestamp).toLocaleString()}] Code: ${entry.code} | URL: ${entry.claimUrl}`;
-      historyDiv.appendChild(p);
-    });
+    config.historyLog
+      .slice()
+      .reverse()
+      .forEach((entry) => {
+        const p = document.createElement("p");
+        p.innerText = `[${new Date(entry.timestamp).toLocaleString()}] Code: ${
+          entry.code
+        } | URL: ${entry.claimUrl}`;
+        historyDiv.appendChild(p);
+      });
   } else {
     historyDiv.innerText = "No history yet.";
   }
 }
 
 document.getElementById("enable").addEventListener("click", () => {
-  loadConfig(config => {
+  loadConfig((config) => {
     config.automationEnabled = true;
     saveConfig(config, () => {
       document.getElementById("automationStatus").innerText = "Enabled";
@@ -91,7 +97,7 @@ document.getElementById("enable").addEventListener("click", () => {
 });
 
 document.getElementById("disable").addEventListener("click", () => {
-  loadConfig(config => {
+  loadConfig((config) => {
     config.automationEnabled = false;
     saveConfig(config, () => {
       document.getElementById("automationStatus").innerText = "Disabled";
@@ -102,9 +108,12 @@ document.getElementById("disable").addEventListener("click", () => {
 });
 
 document.getElementById("saveConfig").addEventListener("click", () => {
-  loadConfig(config => {
+  loadConfig((config) => {
     const channelIdsStr = document.getElementById("channelIds").value;
-    config.channelIds = channelIdsStr.split(",").map(s => s.trim()).filter(s => s);
+    config.channelIds = channelIdsStr
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
     const stakeDomainSelect = document.getElementById("stakeDomain");
     config.activeStakeDomain = stakeDomainSelect.value;
     saveConfig(config, () => {
