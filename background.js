@@ -163,25 +163,16 @@ function autoClickBonusButtons(tabId) {
       const methodsTried = [];
 
       function trySpecificSelector() {
-        methodsTried.push("specific selector");
-        const claimButton = document.querySelector(
+        const btn = document.querySelector(
           "button[type='submit'][data-test='claim-drop']"
         );
-        if (claimButton) {
+        if (btn) {
           console.log(
-            "Method 1: Specific selector found a button. Clicking it."
+            "Method 1: Found button with data-test='claim-drop'. Clicking it."
           );
-          claimButton.click();
+          btn.click();
           return true;
         }
-        const doneButton = document.querySelector(
-          "button[type='button'][data-test='claim-bonus-done']"
-        );
-        if (doneButton) {
-          doneButton.click();
-          return true;
-        }
-
         console.log("Method 1: Specific selector did not find any button.");
         return false;
       }
