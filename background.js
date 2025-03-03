@@ -163,16 +163,34 @@ function autoClickBonusButtons(tabId) {
       const methodsTried = [];
 
       function trySpecificSelector() {
-        const btn = document.querySelector(
-          "button[type='submit'][data-test='claim-drop']"
-        );
-        if (btn) {
-          console.log(
-            "Method 1: Found button with data-test='claim-drop'. Clicking it."
+        let attempts = 0;
+        let clickCount = 0;
+        const maxSearchAttempts = 500; // 500 * 100ms = 50 seconds max search time.
+        const intervalId = setInterval(() => {
+          const btn = document.querySelector(
+            "button[type='submit'][data-test='claim-drop']"
           );
-          btn.click();
-          return true;
-        }
+          if (
+            btn &&
+            !btn.disabled &&
+            getComputedStyle(btn).pointerEvents !== "none"
+          ) {
+            clearInterval(intervalId);
+            const clickInterval = setInterval(() => {
+              if (clickCount < 10) {
+                btn.click();
+                clickCount++;
+              } else {
+                clearInterval(clickInterval);
+              }
+            }, 200);
+            return true;
+          }
+          attempts++;
+          if (attempts >= maxSearchAttempts) {
+            clearInterval(intervalId);
+          }
+        }, 100);
         console.log("Method 1: Specific selector did not find any button.");
         return false;
       }
