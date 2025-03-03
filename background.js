@@ -163,41 +163,38 @@ function autoClickBonusButtons(tabId) {
       const methodsTried = [];
 
       function trySpecificSelector() {
-        let attempts = 0;
-        let clickCount = 0;
-        const maxSearchAttempts = 500; // 500 * 100ms = 50 seconds max search time.
-        const intervalId = setInterval(() => {
-          const btn = document.querySelector(
-            "button[type='submit'][data-test='claim-drop']"
+        function clickClaimButton() {
+          const claimBtn = document.querySelector(
+            "button[data-test='claim-drop']"
           );
-          if (
-            btn &&
-            !btn.disabled &&
-            getComputedStyle(btn).pointerEvents !== "none"
-          ) {
-            clearInterval(intervalId);
-            const clickInterval = setInterval(() => {
-              if (clickCount < 10) {
-                btn.click();
-                clickCount++;
-              } else {
-                clearInterval(clickInterval);
-              }
-            }, 200);
+          if (claimBtn && !claimBtn.disabled) {
+            console.log("Method 1: Claim bonus button found. Clicking...");
+            claimBtn.click();
             return true;
           }
-          attempts++;
-          if (attempts >= maxSearchAttempts) {
-            clearInterval(intervalId);
-          }
-        }, 100);
-        console.log("Method 1: Specific selector did not find any button.");
-        return false;
+          console.log("Method 1: Specific selector did not find any button.");
+          return false;
+        }
+
+        function retryClick(maxRetries = 10, interval = 500) {
+          let attempts = 0;
+          const intervalId = setInterval(() => {
+            if (clickClaimButton() || attempts >= maxRetries) {
+              clearInterval(intervalId);
+              console.log(
+                attempts < maxRetries
+                  ? "Successfully clicked the button!"
+                  : "Failed to find the button after retries."
+              );
+            }
+            attempts++;
+          }, interval);
+        }
+        retryClick();
       }
 
       function tryTextSearch() {
         methodsTried.push("text search");
-        const start = Date.now();
 
         const buttons = document.querySelectorAll("button");
         let claimButton = null;
