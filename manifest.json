@@ -37,7 +37,8 @@
     "*://*.stake.tel/*?app=CodeClaim&*",
     "*://*.stake.horse/*?app=CodeClaim&*",
     "*://*.stake.us/*?app=CodeClaim&*",
-    "*://*.staketr.com/*?app=CodeClaim&*"
+    "*://*.staketr.com/*?app=CodeClaim&*",
+    "https://api.github.com/*"
   ],
   "background": {
     "service_worker": "background.js",

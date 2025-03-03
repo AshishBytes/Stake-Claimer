@@ -7,6 +7,8 @@
     body { font-family: Arial, sans-serif; width: 320px; padding: 10px; }
     button, input, select, textarea { width: 100%; margin: 5px 0; }
     #history { max-height: 150px; overflow-y: auto; border: 1px solid #ccc; margin-top: 10px; padding: 5px; }
+    /* Hide the Download Update button by default */
+    #downloadBtn { display: none; }
   </style>
 </head>
 <body>
@@ -31,6 +33,14 @@
   <hr>
   <h4>History Log</h4>
   <div id="history"></div>
+  <hr>
+  <!-- New Update Extension Section -->
+  <div>
+    <h4>Update Extension (Underdevelopment)</h4>
+    <button id="updateBtn">Check for Updates</button>
+    <button id="downloadBtn">Download Update</button>
+    <p id="updateStatus"></p>
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>

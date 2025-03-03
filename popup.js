@@ -137,3 +137,63 @@ chrome.storage.onChanged.addListener((changes, area) => {
     loadConfig(populateFields);
   }
 });
+
+// -------------------------------
+// Update Check Feature (Commits)
+// -------------------------------
+
+// Get update elements from the popup
+const updateBtn = document.getElementById('updateBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const updateStatus = document.getElementById('updateStatus');
+
+// GitHub repository details – update these with your values
+const GITHUB_OWNER = process.env.GITHUB_OWNER;
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+
+// The current commit hash your extension is built on.
+// Update this value during your build/release process.
+const CURRENT_COMMIT = process.env.CURRENT_COMMIT; // Replace with your actual commit hash
+
+async function checkForUpdates() {
+  updateStatus.textContent = 'Checking for new commits...';
+  try {
+    // Fetch the latest commit from the main branch (adjust branch name if needed)
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/commits?sha=main&per_page=1`, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch commit info');
+    }
+    const commits = await response.json();
+    if (!commits || commits.length === 0) {
+      throw new Error('No commits found');
+    }
+    const latestCommit = commits[0];
+    const latestCommitSha = latestCommit.sha;
+    if (latestCommitSha !== CURRENT_COMMIT) {
+      updateStatus.textContent = `New commit available: ${latestCommitSha.substring(0,7)}`;
+      downloadBtn.style.display = 'block';
+    } else {
+      updateStatus.textContent = 'You are up-to-date with the latest commit.';
+      downloadBtn.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Error checking for new commits:', err);
+    updateStatus.textContent = 'Error checking for new commits.';
+    downloadBtn.style.display = 'none';
+  }
+}
+
+function downloadUpdate() {
+  // Open the URL to download the latest main branch as a ZIP archive
+  const archiveUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/heads/main.zip`;
+  window.open(archiveUrl, '_blank');
+}
+
+updateBtn.addEventListener('click', checkForUpdates);
+downloadBtn.addEventListener('click', downloadUpdate);
