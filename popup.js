@@ -1,4 +1,5 @@
-const defaultConfig = {
+document.addEventListener("DOMContentLoaded", () => {
+  const defaultConfig = {
   automationEnabled: false,
   channelIds: ["-1002239669640"],
   stakeDomains: [
@@ -70,16 +71,11 @@ function populateFields(config) {
   const historyDiv = document.getElementById("history");
   historyDiv.innerHTML = "";
   if (config.historyLog && config.historyLog.length > 0) {
-    config.historyLog
-      .slice()
-      .reverse()
-      .forEach((entry) => {
-        const p = document.createElement("p");
-        p.innerText = `[${new Date(entry.timestamp).toLocaleString()}] Code: ${
-          entry.code
-        } | URL: ${entry.claimUrl}`;
-        historyDiv.appendChild(p);
-      });
+    config.historyLog.slice().reverse().forEach((entry) => {
+      const p = document.createElement("p");
+      p.innerText = `[${new Date(entry.timestamp).toLocaleString()}] Code: ${entry.code} | URL: ${entry.claimUrl}`;
+      historyDiv.appendChild(p);
+    });
   } else {
     historyDiv.innerText = "No history yet.";
   }
@@ -130,6 +126,16 @@ document.getElementById("resetConfig").addEventListener("click", () => {
   });
 });
 
+document.getElementById("clearHistory").addEventListener("click", () => {
+  loadConfig((config) => {
+    config.historyLog = [];
+    saveConfig(config, () => {
+      console.log("History log cleared.");
+      populateFields(config);
+    });
+  });
+});
+
 loadConfig(populateFields);
 
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -137,6 +143,18 @@ chrome.storage.onChanged.addListener((changes, area) => {
     loadConfig(populateFields);
   }
 });
+
+function updateLiveStatus() {
+  chrome.storage.local.get(["lastScanTime", "lastClaimedTime"], (result) => {
+    const scanTime = result.lastScanTime ? new Date(result.lastScanTime).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "N/A";
+    const claimTime = result.lastClaimedTime ? new Date(result.lastClaimedTime).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "N/A";
+    document.getElementById("liveStatus").innerText =
+      "Last Scan: " + scanTime + "\n" +
+      "Last Claim: " + claimTime;
+  });
+}
+setInterval(updateLiveStatus, 1000);
+
 
 // -------------------------------
 // Update Check Feature (Commits)
@@ -197,3 +215,5 @@ function downloadUpdate() {
 
 updateBtn.addEventListener('click', checkForUpdates);
 downloadBtn.addEventListener('click', downloadUpdate);
+
+});

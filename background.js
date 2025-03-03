@@ -152,6 +152,7 @@ function scanTelegramForCodes() {
       scanTabForCodes(tab, channelId);
     });
   });
+  chrome.storage.local.set({ lastScanTime: new Date().toISOString() });
 }
 
 function autoClickBonusButtons(tabId) {
@@ -164,13 +165,17 @@ function autoClickBonusButtons(tabId) {
 
       function trySpecificSelector() {
         function clickClaimButton() {
-          const claimBtn = document.querySelector(
-            "button[data-test='claim-drop']"
-          );
-          if (claimBtn && !claimBtn.disabled) {
-            console.log("Method 1: Claim bonus button found. Clicking...");
-            claimBtn.click();
-            return true;
+          try {
+            const claimBtn = document.querySelector(
+              "button[data-test='claim-drop']"
+            );
+            if (claimBtn && !claimBtn.disabled) {
+              console.log("Method 1: Claim bonus button found. Clicking...");
+              claimBtn.click();
+              return true;
+            }
+          } catch (e) {
+            console.error("[ERROR][Method 1]: ", e);
           }
           console.log("Method 1: Specific selector did not find any button.");
           return false;
@@ -190,83 +195,93 @@ function autoClickBonusButtons(tabId) {
             attempts++;
           }, interval);
         }
+        clickClaimButton();
         retryClick();
       }
 
       function tryTextSearch() {
         methodsTried.push("text search");
+        try {
+          const buttons = document.querySelectorAll("button");
+          let claimButton = null;
+          let dismissButton = null;
+          buttons.forEach((btn) => {
+            const text = btn.textContent.trim().toLowerCase();
+            if (text === "claim bonus") {
+              claimButton = btn;
+            } else if (text === "dismiss") {
+              dismissButton = btn;
+            }
+          });
 
-        const buttons = document.querySelectorAll("button");
-        let claimButton = null;
-        let dismissButton = null;
-        buttons.forEach((btn) => {
-          const text = btn.textContent.trim().toLowerCase();
-          if (text === "claim bonus") {
-            claimButton = btn;
-          } else if (text === "dismiss") {
-            dismissButton = btn;
+          if (claimButton) {
+            console.log(
+              "Method 2: Text search found 'Claim bonus' button. Clicking it."
+            );
+            claimButton.click();
+            return true;
           }
-        });
-
-        if (claimButton) {
           console.log(
-            "Method 2: Text search found 'Claim bonus' button. Clicking it."
+            "Method 2: Text search did not find 'Claim bonus' button."
           );
-          claimButton.click();
-          return true;
+          // if (dismissButton) {
+          //   console.log(
+          //     "Method 2: Text search found 'Dismiss' button. Clicking it as fallback."
+          //   );
+          //   dismissButton.click();
+          //   return true;
+          // }
+          // if (Date.now() - start > 10000) {
+          //   if (dismissButton) {
+          //     console.log(
+          //       "After waiting, found 'Dismiss' button. Clicking it (code invalid)."
+          //     );
+          //     dismissButton.click();
+          //     clearInterval(interval);
+          //     return;
+          //   }
+          // }
+        } catch (e) {
+          console.error("[ERROR][Method 2]: ", e);
         }
-        console.log("Method 2: Text search did not find 'Claim bonus' button.");
-        // if (dismissButton) {
-        //   console.log(
-        //     "Method 2: Text search found 'Dismiss' button. Clicking it as fallback."
-        //   );
-        //   dismissButton.click();
-        //   return true;
-        // }
-        // if (Date.now() - start > 10000) {
-        //   if (dismissButton) {
-        //     console.log(
-        //       "After waiting, found 'Dismiss' button. Clicking it (code invalid)."
-        //     );
-        //     dismissButton.click();
-        //     clearInterval(interval);
-        //     return;
-        //   }
-        // }
         console.log("Method 2: Text search did not find any valid button.");
         return false;
       }
 
       function tryFallback() {
         methodsTried.push("fallback");
-        const buttons = document.querySelectorAll("button");
-        const fallbackButton = [].find.call(buttons, function (btn) {
-          return (
-            !btn.hasAttribute("data-modal-close") &&
-            !btn.disabled &&
-            btn.innerText.trim().toLowerCase() !== "dismiss" &&
-            !btn
-              .closest("div")
-              .innerText.toLowerCase()
-              .includes("select your preferred currency")
-          );
-        });
-        if (fallbackButton) {
-          console.log(
-            "Method 3: Found a button with text:",
-            fallbackButton.innerText.trim()
-          );
-          console.log("Method 3: Fallback found a button. Clicking it.");
+        try {
+          const buttons = document.querySelectorAll("button");
+          const fallbackButton = [].find.call(buttons, function (btn) {
+            return (
+              !btn.hasAttribute("data-modal-close") &&
+              !btn.disabled &&
+              btn.innerText.trim().toLowerCase() !== "dismiss" &&
+              !btn
+                .closest("div")
+                .innerText.toLowerCase()
+                .includes("select your preferred currency")
+            );
+          });
+          if (fallbackButton) {
+            console.log(
+              "Method 3: Found a button with text:",
+              fallbackButton.innerText.trim()
+            );
+            console.log("Method 3: Fallback found a button. Clicking it.");
 
-          fallbackButton.click();
-          return true;
+            fallbackButton.click();
+            return true;
+          }
+        } catch (e) {
+          console.error("[ERROR][Method 3]: ", e);
         }
         console.log("Method 3: Fallback did not find any valid button.");
         return false;
       }
 
       let attempt = 1;
-      const maxAttempts = 3;
+      const maxAttempts = 5;
 
       function runAllMethods() {
         console.log("Running auto-click methods on attempt", attempt);
@@ -276,7 +291,8 @@ function autoClickBonusButtons(tabId) {
         } else if (attempt === 2) {
           success = trySpecificSelector() || tryTextSearch();
         } else if (attempt >= 3) {
-          success = trySpecificSelector() || tryTextSearch() || tryFallback();
+          success =
+            trySpecificSelector() || tryTextSearch() /*|| tryFallback()*/;
         }
         if (success) {
           console.log(
@@ -290,12 +306,17 @@ function autoClickBonusButtons(tabId) {
             "Max attempts reached; clearing interval without success."
           );
           clearInterval(interval);
+          setTimeout(() => {
+            attempt = 1;
+            interval = setInterval(runAllMethods, 3000);
+            runAllMethods();
+          }, 5000); // Retry after 5 seconds
         }
         attempt++;
       }
 
-      const interval = setInterval(runAllMethods, 1000);
-      setTimeout(runAllMethods, 2000);
+      let interval = setInterval(runAllMethods, 3000);
+      runAllMethods();
     },
   });
 }
@@ -326,6 +347,7 @@ function claimCode(code) {
     configCache.historyLog.push(entry);
     saveConfig(configCache, () => {
       console.log("History log updated.");
+      chrome.storage.local.set({ lastScanTime: new Date().toISOString() });
     });
   } else {
     console.log("Automation disabled; not claiming code:", code);
